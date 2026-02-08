@@ -1,104 +1,88 @@
-# FastAPI Insurance Premium Category Predictor
+# Insurance Premium Category Prediction API
 
-## Project Intent
-This project is primarily a **FastAPI learning project**.
+## Overview
+This is a learning-focused end-to-end project that serves an ML model through FastAPI and consumes it from a Streamlit UI.
 
-The goal is to understand and practice end-to-end API development principles such as:
-- request validation with Pydantic
-- feature engineering inside API logic
-- serving a trained ML pipeline through REST endpoints
-- integrating a frontend client with the API
+The project demonstrates:
+- schema validation with Pydantic
+- runtime feature engineering inside the API layer
+- model loading and inference with scikit-learn
+- frontend integration with a REST endpoint
 
-The core idea here is **not** to build the most optimal ML model, but to strengthen practical FastAPI skills.
+## Project Goals
+- Practice building a clean FastAPI inference service.
+- Learn how to convert raw user input into model-ready features.
+- Build a simple full-stack workflow: API + UI + trained model artifact.
 
-## What I Built (End-to-End)
-I built a complete workflow from model training to user-facing prediction:
-1. Trained a classification pipeline in `ML_Model_Building.ipynb`.
-2. Saved the trained model as `model.pkl`.
-3. Exposed prediction via FastAPI endpoint (`/predict`) in `app.py`.
-4. Built a simple Streamlit frontend in `front_end.py` to consume the API.
+## Current Architecture
+1. User enters details in Streamlit (`front_end.py`).
+2. Streamlit sends a `POST` request to `/predict`.
+3. FastAPI validates request body using `UserInput` schema.
+4. Derived features are computed (`bmi`, `age_group`, `lifestyle_risk`, `city_tier`).
+5. Model inference runs via `Model/predict.py`.
+6. API returns `predicted_category` as JSON.
 
-## Tech Stack
-- **Backend API:** FastAPI
-- **Data validation & schema modeling:** Pydantic (v2 style, including `@computed_field`)
-- **ML/Data processing:** scikit-learn, pandas
-- **Model serialization:** pickle
-- **Frontend/UI:** Streamlit
-- **API client from UI:** requests
-- **Language:** Python
-
-## Project Structure
+## Repository Structure
 ```text
-FastAPI_implemntation/
-├── app.py                    # FastAPI app for premium prediction
-├── front_end.py              # Streamlit app (calls FastAPI /predict)
-├── ML_Model_Building.ipynb   # Training and pipeline export workflow
-├── model.pkl                 # Serialized trained model pipeline
+Insurance_Premium_Project/
+├── app.py                    # FastAPI app with routes and prediction orchestration
+├── front_end.py              # Streamlit client application
+├── requirements.txt          # Python dependencies
+├── README.md                 # Project documentation
+├── ML_Model_Building.ipynb   # Model training/export notebook
 ├── Data/
-│   └── insurance.csv         # Source dataset
-└── .gitignore
+│   └── insurance.csv         # Training dataset
+├── Model/
+│   ├── model.pkl             # Serialized scikit-learn pipeline
+│   └── predict.py            # Model loading + predict_output()
+├── Schema/
+│   └── user_input.py         # Pydantic input schema and computed features
+└── config/
+    └── city_tier.py          # Tier-1 and Tier-2 city lists
 ```
 
-## Prediction API Design
-### Endpoint
-- `POST /predict`
+## API Endpoints
+### `GET /`
+Basic welcome message to confirm the server is reachable.
 
-### Input fields
-- `age` (int)
-- `weight` (float)
-- `height` (float)
-- `income_lpa` (float)
-- `smoker` (bool)
-- `city` (str)
-- `occupation` (enum: `retired`, `freelancer`, `student`, `government_job`, `business_owner`, `unemployed`, `private_job`)
+### `GET /health`
+Health endpoint returning API status and model version.
 
-### Derived features inside API
-The API computes these features before inference:
-- `bmi`
-- `lifestyle_risk`
-- `age_group`
-- `city_tier`
-
-### Response
+Example response:
 ```json
 {
-  "predicted_category": "<class_label>"
+  "status": "API is healthy and running.",
+  "version": "1.0.0"
 }
 ```
 
-## How to Run Locally
-### 1. Go to project folder
-```bash
-cd /Users/rohan/Desktop/FastAPI/FastAPI_implemntation
-```
+### `POST /predict`
+Accepts user profile details and returns insurance premium category prediction.
 
-### 2. Install dependencies
-```bash
-pip install fastapi "uvicorn[standard]" pydantic pandas scikit-learn streamlit requests jupyter
-```
+## Input Contract (`POST /predict`)
+Fields:
+- `age` (`int`): must be between `1` and `119`
+- `weight` (`float`): in kilograms, must be `> 0`
+- `height` (`float`): in meters, expected range `0.5` to `2.5`
+- `income_lpa` (`float`): income in lakhs per annum, must be `> 0`
+- `smoker` (`bool`)
+- `city` (`str`)
+- `occupation` (`str` enum): `retired`, `freelancer`, `student`, `government_job`, `business_owner`, `unemployed`, `private_job`
 
-### 3. Start FastAPI server
-```bash
-uvicorn app:app --host 0.0.0.0 --port 8002 --reload
-```
+Derived fields computed inside API schema:
+- `bmi = weight / (height^2)`
+- `age_group` based on age bucket
+- `lifestyle_risk` based on smoker status and BMI
+- `city_tier` based on configured city lists
 
-### 4. Start Streamlit frontend (new terminal)
-```bash
-streamlit run front_end.py
-```
-
-### 5. Open docs and app
-- FastAPI Swagger: `http://127.0.0.1:8002/docs`
-- Streamlit UI: shown in terminal after running Streamlit
-
-## Example API Request
+## Example Request
 ```bash
 curl -X POST "http://127.0.0.1:8002/predict" \
   -H "Content-Type: application/json" \
   -d '{
     "age": 30,
     "weight": 70,
-    "height": 175,
+    "height": 1.75,
     "income_lpa": 10,
     "smoker": false,
     "city": "Mumbai",
@@ -106,11 +90,54 @@ curl -X POST "http://127.0.0.1:8002/predict" \
   }'
 ```
 
-## Key FastAPI Learnings Captured in This Project
-- Structuring a production-style inference endpoint
-- Enforcing clean input contracts with Pydantic
-- Using computed fields for reusable business logic
-- Returning explicit JSON responses
-- Connecting backend and frontend in a simple full-stack ML app
+## Example Success Response
+```json
+{
+  "predicted_category": "Low"
+}
+```
 
+## Local Setup
+### 1. Move to project directory
+```bash
+cd /Users/rohan/Desktop/FastAPI/Insurance_Premium_Project
+```
 
+### 2. Create and activate virtual environment
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Run FastAPI server
+```bash
+uvicorn app:app --host 0.0.0.0 --port 8002 --reload
+```
+
+### 5. Run Streamlit UI (new terminal, same venv)
+```bash
+streamlit run front_end.py
+```
+
+### 6. Open applications
+- FastAPI docs: `http://127.0.0.1:8002/docs`
+- Streamlit app: URL shown in Streamlit terminal output
+
+## Development Notes
+- Model file is loaded at import time from `Model/model.pkl`.
+- Prediction helper expects a dictionary with model feature names.
+- City input is normalized using `.strip().title()` before tier mapping.
+- Height is handled in meters across schema, API examples, and frontend.
+
+## Learning Outcomes
+This project is a solid practice baseline for:
+- FastAPI routing and response handling
+- Pydantic v2 schema design with computed fields
+- API-side feature engineering
+- Serving serialized ML models
+- Connecting UI and backend in a simple production-style flow
