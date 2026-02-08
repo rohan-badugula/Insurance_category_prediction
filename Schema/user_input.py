@@ -6,7 +6,7 @@ from config.city_tier import tier_1_cities, tier_2_cities
 class UserInput(BaseModel): 
     age: Annotated[int, Field(..., gt=0, lt=120, description="Age must be between 1 and 119", example=30)]
     weight: Annotated[float, Field(..., gt=0, description="Weight must be a positive number", example=70.5)]
-    height: Annotated[float, Field(..., gt=0, description="Height must be a positive number", example=175.2)]
+    height: Annotated[float, Field(..., gt=0.5, lt=2.5, description="Height in meters (e.g., 1.75)", example=1.75)]
     income_lpa: Annotated[float, Field(..., gt=0, description="Income in lakhs per annum must be a positive number", example=10.0)]
     smoker: Annotated[bool, Field(..., description="Whether the person is a smoker or not", example=False)]
     city: Annotated[str, Field(..., description="City of residence", example="Mumbai")]
@@ -16,7 +16,7 @@ class UserInput(BaseModel):
     @computed_field
     @property
     def bmi(self) -> float:
-        return self.weight / ((self.height / 100) ** 2)  # height converted to meters
+        return self.weight / (self.height ** 2)
     
     @computed_field
     @property
