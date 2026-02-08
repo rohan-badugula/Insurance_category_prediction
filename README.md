@@ -113,11 +113,4 @@ curl -X POST "http://127.0.0.1:8002/predict" \
 - Returning explicit JSON responses
 - Connecting backend and frontend in a simple full-stack ML app
 
-## Notes for Future Improvements
-- Add `requirements.txt` and version pinning for reproducibility.
-- Add automated tests for `/predict` input/output behavior.
-- Containerize with Docker for simpler deployment.
-- Add better model tracking and evaluation reporting.
 
-## Author Note
-This repository documents my hands-on journey in learning FastAPI through a real ML-serving use case.
