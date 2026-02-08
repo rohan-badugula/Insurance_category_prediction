@@ -6,7 +6,7 @@ import pickle
 import pandas as pd
 
 # importing the ml model
-with open("model.pkl", "rb") as f:
+with open("Model/model.pkl", "rb") as f:
     model = pickle.load(f)
 
 app = FastAPI()
